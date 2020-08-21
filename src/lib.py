@@ -28,14 +28,21 @@ def flatten(array, dims=None):
 
 
 @jit
-def xe_loss(logprobs, targets):
-    return -jnp.take_along_axis(logprobs, targets[..., None], axis=-1)
+def xe_loss(logits, targets):
+    return -jnp.take_along_axis(jax.nn.log_softmax(logits), targets[..., None], axis=-1)
 
 
 @jit
-def xe_and_acc(logprobs, targets):
-    acc = (logprobs.argmax(1) == targets).astype(jnp.float32)
-    return xe_loss(logprobs, targets), acc
+def mean_xe_loss(logits, targets):
+    return -jnp.take_along_axis(
+        jax.nn.log_softmax(logits), targets[..., None], axis=-1
+    ).mean()
+
+
+@jit
+def xe_and_acc(logits, targets):
+    acc = (logits.argmax(1) == targets).astype(jnp.float32)
+    return xe_loss(logits, targets), acc
 
 
 def make_inner_loop_fn(loss_acc_fn, opt_update_fn):
